@@ -400,9 +400,7 @@ public class ModButtonPresenter extends Presenter<ModButtonPresenter.ModButtonUi
         List<InCallPluginInfo> contactInCallPlugins = getContactInCallPluginInfoList();
         final boolean shouldShowInCall = isProvisioned &&
                 contactInCallPlugins != null && !contactInCallPlugins.isEmpty();
-        final boolean showNote = isProvisioned &&
-                DeepLinkIntegrationManager.getInstance().ambientIsAvailable(getUi().getContext()) &&
-                        mNoteDeepLink != null;
+        final boolean showNote = isProvisioned && mNoteDeepLink != null;
 
         ui.showButton(BUTTON_INCALL, shouldShowInCall);
         if (shouldShowInCall) {
@@ -462,10 +460,20 @@ public class ModButtonPresenter extends Presenter<ModButtonPresenter.ModButtonUi
         onStateChange(null, state, CallList.getInstance());
     }
 
-    public void takeNote() {
+    public void handleNoteClick() {
         if (mCall == null || mNoteDeepLink == null || getUi() == null) {
             return;
         }
+
+
+        if (mNoteDeepLink.getAlreadyHasContent()) {
+            showNote();
+        } else {
+            takeNote();
+        }
+    }
+
+    private void takeNote() {
         Context ctx = getUi().getContext();
         android.telecom.Call.Details details = mCall.getTelecommCall().getDetails();
         String name;
@@ -486,6 +494,13 @@ public class ModButtonPresenter extends Presenter<ModButtonPresenter.ModButtonUi
         DeepLinkIntegrationManager.getInstance().sendContentSentEvent(ctx, mNoteDeepLink,
                 new ComponentName(ctx, CallButtonPresenter.class));
         ctx.startActivity(content.build());
+    }
+
+    private void showNote() {
+        Context ctx = getUi().getContext();
+        ComponentName componentName = new ComponentName(ctx.getPackageName(),
+                ModButtonPresenter.class.getName());
+        DeepLinkIntegrationManager.getInstance().viewNote(ctx, mNoteDeepLink, componentName);
     }
 
     public void getPreferredLinks() {

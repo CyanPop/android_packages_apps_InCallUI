@@ -41,6 +41,7 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
+import android.view.View;
 import android.widget.RemoteViews;
 import com.android.contacts.common.util.BitmapUtil;
 import com.android.incallui.ContactInfoCache.ContactCacheEntry;
@@ -285,7 +286,7 @@ public class StatusBarNotifier implements InCallPresenter.InCallStateListener,
 
         if (contactInfo.isSpam) {
             subTextContent = mContext.getResources().getQuantityString(R.plurals.spam_count_text,
-                    contactInfo.spamCount);
+                    contactInfo.spamCount, contactInfo.spamCount);
         }
 
         if (!TextUtils.isEmpty(subTextContent)) {
@@ -316,7 +317,7 @@ public class StatusBarNotifier implements InCallPresenter.InCallStateListener,
                 notification.headsUpContentView};
         // add LookupProvider badge to Notification
         Drawable logo = contactInfo.lookupProviderBadge;
-        if (largeIcon != null && logo != null) {
+        if (logo != null) {
             Bitmap bitmap = null;
             if (logo instanceof BitmapDrawable) {
                 bitmap = ((BitmapDrawable) logo).getBitmap();
@@ -330,6 +331,7 @@ public class StatusBarNotifier implements InCallPresenter.InCallStateListener,
             int spamColor = mContext.getResources().getColor(R.color.spam_contact_color);
             for (RemoteViews view : viewsToUpdate) {
                 int rightIconId = getNotificationRightIconId(mContext);
+                view.setViewVisibility(rightIconId, View.VISIBLE);
                 view.setImageViewBitmap(rightIconId, bitmap);
                 view.setViewPadding(rightIconId, 0, 0, 0, 0);
                 if (contactInfo.isSpam) {
@@ -452,14 +454,15 @@ public class StatusBarNotifier implements InCallPresenter.InCallStateListener,
         }
         if (TextUtils.isEmpty(contactInfo.name)) {
             String contactNumberDisplayed = TextUtils.isEmpty(contactInfo.number) ?
-                "" : contactInfo.number.toString();
+                    "" : contactInfo.number.toString();
             if (mContext.getResources().
-                getBoolean(R.bool.display_home_location_on_statusbar)) {
-                    contactNumberDisplayed =  contactNumberDisplayed + " " + contactInfo.location;
+                    getBoolean(R.bool.display_home_location_on_statusbar) &&
+                    !TextUtils.isEmpty(contactInfo.location)) {
+                contactNumberDisplayed =  contactNumberDisplayed + " " + contactInfo.location;
             }
             return TextUtils.isEmpty(contactNumberDisplayed) ? null
                     : BidiFormatter.getInstance().unicodeWrap(
-                            contactNumberDisplayed, TextDirectionHeuristics.LTR);
+                    contactNumberDisplayed, TextDirectionHeuristics.LTR);
         }
 
         return contactInfo.name;
@@ -680,7 +683,7 @@ public class StatusBarNotifier implements InCallPresenter.InCallStateListener,
 
         PendingIntent blockPendingIntent = createNotificationPendingIntent(
                 mContext, ACTION_BLOCK_INCOMING_CALL);
-        builder.addAction(R.drawable.ic_block_24dp,
+        builder.addAction(R.drawable.ic_do_not_disturb_white_24dp,
                 mContext.getText(R.string.notification_action_block), blockPendingIntent);
     }
 
